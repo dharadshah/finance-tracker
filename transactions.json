@@ -1,0 +1,32 @@
+[
+    {
+        "description": "Salary",
+        "amount": 50000,
+        "is_expense": false
+    },
+    {
+        "description": "Grocery Shopping",
+        "amount": 2500,
+        "is_expense": true
+    },
+    {
+        "description": "Netflix",
+        "amount": 649,
+        "is_expense": true
+    },
+    {
+        "description": "Freelance Work",
+        "amount": 15000,
+        "is_expense": false
+    },
+    {
+        "description": "Electricity Bill",
+        "amount": 1800,
+        "is_expense": true
+    },
+    {
+        "description": "Gym Membership",
+        "amount": 1200,
+        "is_expense": true
+    }
+]
