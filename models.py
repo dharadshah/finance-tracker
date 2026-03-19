@@ -19,10 +19,30 @@ class Transaction:
         label = "EXPENSE" if self.is_expense else "INCOME "
         print(f"{label} | {self.description:20} | Rs.{self.amount:>10.2f}")
 
+class Income(Transaction):
+    def __init__(self, description, amount):
+        super().__init__(description, amount, is_expense=False)
+
+    def summary(self):
+        return f"Income of Rs.{self.amount:.2f} from {self.description}"
+
+
+class Expense(Transaction):
+    def __init__(self, description, amount):
+        super().__init__(description, amount, is_expense=True)
+
+    def summary(self):
+        return f"Spent Rs.{self.amount:.2f} on {self.description}"
+
+
 if __name__ == "__main__":
-    t1 = Transaction("Salary", 50000, False)
-    t2 = Transaction("Netflix", 649, True)
-    t = Transaction("Test", -100, True)  # should raise ValueError
-    
-    t1.display()
-    t2.display()
+    transactions = [
+        Income("Salary", 50000),
+        Expense("Netflix", 649),
+        Expense("Grocery Shopping", 2500),
+        Income("Freelance Work", 15000),
+    ]
+
+    for t in transactions:
+        print(t.summary())   # calls the right summary() based on type
+        t.display()
