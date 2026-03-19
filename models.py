@@ -35,14 +35,26 @@ class Expense(Transaction):
         return f"Spent Rs.{self.amount:.2f} on {self.description}"
 
 
-if __name__ == "__main__":
-    transactions = [
-        Income("Salary", 50000),
-        Expense("Netflix", 649),
-        Expense("Grocery Shopping", 2500),
-        Income("Freelance Work", 15000),
-    ]
+class Category:
+    def __init__(self, name):
+        self.name = name
+        self.transactions = []
 
-    for t in transactions:
-        print(t.summary())   # calls the right summary() based on type
-        t.display()
+    def add_transaction(self, transaction):
+        self.transactions.append(transaction)
+
+    def total(self):
+        return sum(t.amount for t in self.transactions)
+
+    def display(self):
+        print(f"\nCategory: {self.name}")
+        for t in self.transactions:
+            t.display()
+        print(f"Total: Rs.{self.total():>10.2f}")
+
+
+if __name__ == "__main__":
+    food = Category("Food")
+    food.add_transaction(Expense("Grocery Shopping", 2500))
+    food.add_transaction(Expense("Restaurant", 800))
+    food.display()
