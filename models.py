@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Transaction:
     def __init__(self, description, amount, is_expense):
         self.description = description
@@ -13,6 +17,8 @@ class Transaction:
     def amount(self, value):
         if value < 0:
             raise ValueError("Amount cannot be negative")
+        if value > 100000:
+            logger.warning(f"Unusually high amount entered: Rs.{value} for {self.description}")
         self._amount = value
 
     def display(self):
@@ -54,7 +60,35 @@ class Category:
 
 
 if __name__ == "__main__":
-    food = Category("Food")
-    food.add_transaction(Expense("Grocery Shopping", 2500))
-    food.add_transaction(Expense("Restaurant", 800))
-    food.display()
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            logging.FileHandler("finance_tracker.log"),
+            logging.StreamHandler()           # this keeps terminal output as well
+        ]
+    )
+    # Test normal transaction
+    try:
+        t1 = Transaction("Salary", 50000, False)
+        t1.display()
+        logger.info(f"Transaction created: {t1.description}")
+    except ValueError as e:
+        logger.error(f"Failed to create transaction: {e}")
+
+    # Test negative amount
+    try:
+        t2 = Transaction("Bad Entry", -500, True)
+        t2.display()
+    except ValueError as e:
+        logger.error(f"Failed to create transaction: {e}")
+
+    # Test high amount warning
+    try:
+        t3 = Transaction("Luxury Car", 200000, True)
+        t3.display()
+    except ValueError as e:
+        logger.error(f"Failed to create transaction: {e}")
+
+
