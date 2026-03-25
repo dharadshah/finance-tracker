@@ -1,3 +1,6 @@
 2026-03-23 10:42:45 | INFO     | __main__ | Transaction created: Salary
 2026-03-23 10:42:45 | ERROR    | __main__ | Failed to create transaction: Amount cannot be negative
 2026-03-23 10:42:45 | WARNING  | __main__ | Unusually high amount entered: Rs.200000 for Luxury Car
+2026-03-25 15:24:28 | INFO     | __main__ | Transaction created: Salary
+2026-03-25 15:24:28 | ERROR    | __main__ | Failed to create transaction: Amount cannot be negative
+2026-03-25 15:24:28 | WARNING  | __main__ | Unusually high amount entered: Rs.200000 for Luxury Car

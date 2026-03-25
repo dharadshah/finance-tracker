@@ -1,0 +1,28 @@
+[project]
+name = "finance-tracker"
+version = "0.1.0"
+description = "Personal Finance Tracker - Learning Project"
+authors = [
+    {name = "Dhara Shah",email = "dharadshah@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = "^3.11"
+dependencies = [
+    "fastapi (>=0.135.2,<0.136.0)",
+    "sqlalchemy (>=2.0.48,<3.0.0)",
+    "pydantic (>=2.12.5,<3.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "uvicorn (>=0.42.0,<0.43.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
+]
