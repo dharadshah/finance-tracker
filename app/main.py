@@ -1,5 +1,7 @@
 import logging
 from fastapi import FastAPI
+from app.database import engine
+from app import models
 from app.schemas import TransactionCreate, TransactionResponse
 
 logging.basicConfig(
@@ -9,6 +11,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# creates all tables defined in models.py
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Personal Finance Tracker",
@@ -31,7 +36,6 @@ async def health_check():
 @app.post("/transactions", response_model=TransactionResponse)
 async def create_transaction(transaction: TransactionCreate):
     logger.info(f"Creating transaction: {transaction.description}")
-    # temporary hardcoded response until we have a database
     return {
         "id": 1,
         "description": transaction.description,
