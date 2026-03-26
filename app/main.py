@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from app.schemas import TransactionCreate, TransactionResponse
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,3 +26,16 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.post("/transactions", response_model=TransactionResponse)
+async def create_transaction(transaction: TransactionCreate):
+    logger.info(f"Creating transaction: {transaction.description}")
+    # temporary hardcoded response until we have a database
+    return {
+        "id": 1,
+        "description": transaction.description,
+        "amount": transaction.amount,
+        "is_expense": transaction.is_expense,
+        "category": transaction.category
+    }
