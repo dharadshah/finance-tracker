@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.database import engine
 from app import models
 from app.routers import transactions
+from app.config import settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,9 +16,8 @@ logger = logging.getLogger(__name__)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Personal Finance Tracker",
-    description="A REST API for tracking income and expenses",
-    version="0.1.0"
+    title=settings.app_name,
+    version=settings.app_version
 )
 
 app.include_router(transactions.router)
@@ -25,9 +25,9 @@ app.include_router(transactions.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Personal Finance Tracker API is running"}
+    return {"message": f"{settings.app_name} is running"}
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": settings.app_version}

@@ -1,13 +1,12 @@
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = "sqlite:///./finance_tracker.db"
-
 engine = create_engine(
-    DATABASE_URL,
+    settings.database_url,
     connect_args={"check_same_thread": False}
 )
 
