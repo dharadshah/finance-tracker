@@ -22,6 +22,50 @@ router = APIRouter(
 )
 
 
+@router.get("/analyze")
+async def analyze_transactions(db: Session = Depends(get_db)):
+    transactions = crud.get_transactions(db)
+
+    if not transactions:
+        raise HTTPException(status_code=404, detail="No transactions found")
+
+    transaction_data = [
+        {
+            "description": t.description,
+            "amount":      t.amount,
+            "is_expense":  t.is_expense,
+            "category":    t.category
+        }
+        for t in transactions
+    ]
+
+    system = """
+You are a financial analyst assistant for a Personal Finance
+Tracker API. Analyse transaction data and provide actionable insights.
+Always return valid JSON in this exact format with no extra text:
+{
+    "total_income": 0,
+    "total_expenses": 0,
+    "balance": 0,
+    "savings_rate": 0,
+    "largest_expense_category": "",
+    "insight": ""
+}
+"""
+
+    response = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": f"Analyse these transactions: {transaction_data}"}
+        ]
+    )
+
+    import json
+    result = json.loads(response.choices[0].message.content)
+    return result
+
+
 @router.post("", response_model=TransactionResponse)
 async def create_transaction(
     transaction: TransactionCreate,
@@ -65,47 +109,4 @@ async def delete_transaction(
         raise HTTPException(status_code=404, detail="Transaction not found")
     return {"message": "Transaction deleted successfully"}
 
-
-@router.get("/analyze")
-async def analyze_transactions(db: Session = Depends(get_db)):
-    transactions = crud.get_transactions(db)
-
-    if not transactions:
-        raise HTTPException(status_code=404, detail="No transactions found")
-
-    transaction_data = [
-        {
-            "description": t.description,
-            "amount":      t.amount,
-            "is_expense":  t.is_expense,
-            "category":    t.category
-        }
-        for t in transactions
-    ]
-
-    system = """
-You are a financial analyst assistant for a Personal Finance
-Tracker API. Analyse transaction data and provide actionable insights.
-Always return valid JSON in this exact format with no extra text:
-{
-    "total_income": 0,
-    "total_expenses": 0,
-    "balance": 0,
-    "savings_rate": 0,
-    "largest_expense_category": "",
-    "insight": ""
-}
-"""
-
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user",   "content": f"Analyse these transactions: {transaction_data}"}
-        ]
-    )
-
-    import json
-    result = json.loads(response.choices[0].message.content)
-    return result
 

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     app_name: str
     app_version: str
     debug: bool = False
+    groq_api_key: str
 
     model_config = {"env_file": ".env"}
 
