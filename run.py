@@ -13,7 +13,7 @@ def run_fastapi():
 
 
 def run_gradio():
-    subprocess.run([sys.executable, "gradio_app.py"])
+    subprocess.run([sys.executable, "ui/gradio_app.py"])
 
 
 if __name__ == "__main__":
