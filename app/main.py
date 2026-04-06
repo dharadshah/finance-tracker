@@ -4,12 +4,9 @@ from app.database import engine
 from app import models
 from app.routers import transactions
 from app.config import settings
+from config.logging_config import setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)   
+setup_logging()
 
 logger = logging.getLogger(__name__)
 
