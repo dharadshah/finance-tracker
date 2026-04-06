@@ -1,10 +1,10 @@
 import logging
 from fastapi import FastAPI
-from app.database import engine
-from app import models
-from app.routers import transactions
-from app.config import settings
+from config.database_config import engine
 from config.logging_config import setup_logging
+from app import models
+from app.routers import transactions, categories
+from app.config import settings
 
 setup_logging()
 
@@ -18,6 +18,7 @@ app = FastAPI(
 )
 
 app.include_router(transactions.router)
+app.include_router(categories.router)
 
 
 @app.get("/")
