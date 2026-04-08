@@ -30,6 +30,8 @@ def create_app() -> FastAPI:
         version = settings.app_version
     )
 
+    register_exception_handlers(app)
+
     app.include_router(health.router)
     app.include_router(transactions.router)
     app.include_router(categories.router)

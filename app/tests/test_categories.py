@@ -3,7 +3,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app
-from app.config.database_config import Base, get_db
+from app.config.database_config import Base
+from app.dependencies import get_db
 from app.schemas import CategoryCreate
 from app.services.category_service import seed_default_categories
 

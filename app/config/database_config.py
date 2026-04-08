@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from app.config import settings
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +20,3 @@ SessionLocal = sessionmaker(
     autoflush=False,
     bind=engine
 )
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        logger.info("Database session opened")
-        yield db
-    finally:
-        db.close()
-        logger.info("Database session closed")
