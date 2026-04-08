@@ -1,17 +1,11 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from typing import Optional
+from app.schemas.types import ShortString, LongString
 
 
 class CategoryCreate(BaseModel):
-    name        : str
-    description : Optional[str] = None
-
-    @field_validator("name")
-    @classmethod
-    def name_must_not_be_empty(cls, value):
-        if not value.strip():
-            raise ValueError("Category name cannot be empty")
-        return value.strip()
+    name        : ShortString
+    description : Optional[LongString] = None
 
 
 class CategoryResponse(BaseModel):
