@@ -4,8 +4,9 @@ from app.repository import transaction_repository
 from app.schemas import TransactionCreate
 from app.schemas.transaction_schema import TransactionResponse
 from app.exceptions.finance_exceptions import TransactionNotFoundException
+from app.dependencies import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("app.services.transaction_service")
 
 
 def create_transaction(db: Session, transaction: TransactionCreate):

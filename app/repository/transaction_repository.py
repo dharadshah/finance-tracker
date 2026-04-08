@@ -2,8 +2,9 @@ import logging
 from sqlalchemy.orm import Session, joinedload
 from app.models import Transaction
 from app.schemas import TransactionCreate
+from app.dependencies import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("app.repository.transaction_repository")
 
 def create_transaction(db: Session, transaction: TransactionCreate):
     db_transaction = Transaction(

@@ -7,8 +7,9 @@ from app.exceptions.finance_exceptions import (
     CategoryAlreadyExistsException
 )
 from app.constants.app_constants import DEFAULT_CATEGORIES
+from app.dependencies import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("app.services.category_service")
 
 
 def create_category(db: Session, category: CategoryCreate):

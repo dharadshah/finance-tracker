@@ -2,8 +2,9 @@ import logging
 from sqlalchemy.orm import Session
 from app.models import Category
 from app.schemas import CategoryCreate
+from app.dependencies import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("app.repository.category_repository")
 
 
 def create_category(db: Session, category: CategoryCreate):
