@@ -41,5 +41,7 @@ def seed_default_categories(db: Session):
     for item in DEFAULT_CATEGORIES:
         existing = category_repository.get_category_by_name(db, item.value)
         if not existing:
-            category_repository.create_category(db, CategoryCreate(name=item.value))
+            category_repository.create_category(
+                db, CategoryCreate(name=item.value)
+            )
             logger.info(f"Seeded category: {item.value}")

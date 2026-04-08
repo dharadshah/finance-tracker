@@ -22,7 +22,6 @@ async def create_transaction(
     db          : Session  = Depends(get_db),
     settings    : Settings = Depends(get_settings)
 ):
-    logger.info(f"App: {settings.app_name}")
     return transaction_service.create_transaction(db, transaction)
 
 

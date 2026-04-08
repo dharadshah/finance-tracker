@@ -22,7 +22,6 @@ async def create_category(
     db       : Session  = Depends(get_db),
     settings : Settings = Depends(get_settings)
 ):
-    logger.info(f"App: {settings.app_name}")
     return category_service.create_category(db, category)
 
 

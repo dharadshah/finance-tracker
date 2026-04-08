@@ -5,7 +5,6 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.config.database_config import Base
 from app.dependencies import get_db
-from app.schemas import CategoryCreate
 from app.services.category_service import seed_default_categories
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -37,7 +36,6 @@ app.dependency_overrides[get_db] = override_get_db
 def reset_db():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    # seed default categories for each test
     db = TestingSessionLocal()
     try:
         seed_default_categories(db)
