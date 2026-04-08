@@ -1,6 +1,17 @@
 from fastapi import HTTPException
 
 
+# --- Base Exception ---
+
+class FinanceBaseException(Exception):
+    """Base class for all non-HTTP Finance Tracker exceptions."""
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+# --- Domain Exceptions ---
+
 class TransactionNotFoundException(HTTPException):
     def __init__(self, transaction_id: int):
         super().__init__(
@@ -31,3 +42,13 @@ class InvalidTransactionException(HTTPException):
             status_code = 422,
             detail      = detail
         )
+
+
+class AIAnalysisException(FinanceBaseException):
+    """Raised when AI analysis fails."""
+    pass
+
+
+class DatabaseException(FinanceBaseException):
+    """Raised when a database operation fails unexpectedly."""
+    pass

@@ -4,6 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.config.database_config import Base, get_db
+from app.schemas import CategoryCreate
+from app.services.category_service import seed_default_categories
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
@@ -29,51 +31,62 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-Base.metadata.create_all(bind=engine)
+
+@pytest.fixture(autouse=True)
+def reset_db():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    # seed default categories for each test
+    db = TestingSessionLocal()
+    try:
+        seed_default_categories(db)
+    finally:
+        db.close()
+    yield
+
 
 client = TestClient(app)
 
-
 def test_create_category():
-    response = client.post("/categories", json={
-        "name"       : "Food",
+    response = client.post("/api/v1/categories", json={
+        "name"       : "Test Food Category",
         "description": "Food and groceries"
     })
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "Food"
+    assert data["name"] == "Test Food Category"
     assert data["id"] is not None
 
 
 def test_get_categories():
-    response = client.get("/categories")
+    response = client.get("/api/v1/categories")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 def test_get_category_by_id():
-    create = client.post("/categories", json={"name": "Housing"})
+    create = client.post("/api/v1/categories", json={"name": "Test Housing Category"})
     category_id = create.json()["id"]
 
-    response = client.get(f"/categories/{category_id}")
+    response = client.get(f"/api/v1/categories/{category_id}")
     assert response.status_code == 200
-    assert response.json()["name"] == "Housing"
+    assert response.json()["name"] == "Test Housing Category"
 
 
 def test_category_not_found():
-    response = client.get("/categories/99999")
+    response = client.get("/api/v1/categories/99999")
     assert response.status_code == 404
 
 
 def test_duplicate_category():
-    client.post("/categories", json={"name": "Transport"})
-    response = client.post("/categories", json={"name": "Transport"})
+    client.post("/api/v1/categories", json={"name": "Test Transport Category"})
+    response = client.post("/api/v1/categories", json={"name": "Test Transport Category"})
     assert response.status_code == 400
 
 
 def test_delete_category():
-    create = client.post("/categories", json={"name": "Utilities"})
+    create = client.post("/api/v1/categories", json={"name": "Test Utilities Category"})
     category_id = create.json()["id"]
 
-    response = client.delete(f"/categories/{category_id}")
+    response = client.delete(f"/api/v1/categories/{category_id}")
     assert response.status_code == 200

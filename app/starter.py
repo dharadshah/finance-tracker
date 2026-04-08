@@ -7,6 +7,8 @@ from app.config.database_config import Base
 from app.routers import transactions, categories
 from app import health
 from app.services.category_service import seed_default_categories
+from app.exceptions.handlers import register_exception_handlers
+
 
 setup_logging()
 

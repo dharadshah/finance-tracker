@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 from app.schemas.category_schema import CategoryResponse
 
@@ -32,4 +32,18 @@ class TransactionResponse(BaseModel):
     category_id : Optional[int] = None
     category    : Optional[CategoryResponse] = None
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes"     : True,
+        "populate_by_name"    : True
+    }
+
+    @classmethod
+    def from_orm_with_rel(cls, obj):
+        return cls(
+            id          = obj.id,
+            description = obj.description,
+            amount      = obj.amount,
+            is_expense  = obj.is_expense,
+            category_id = obj.category_id,
+            category    = obj.category_rel
+        )

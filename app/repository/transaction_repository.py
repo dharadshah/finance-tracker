@@ -5,7 +5,6 @@ from app.schemas import TransactionCreate
 
 logger = logging.getLogger(__name__)
 
-
 def create_transaction(db: Session, transaction: TransactionCreate):
     db_transaction = Transaction(
         description = transaction.description,
@@ -16,8 +15,19 @@ def create_transaction(db: Session, transaction: TransactionCreate):
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
-    logger.info(f"Transaction created: {db_transaction.id}")
-    return db_transaction
+
+    transaction_id = db_transaction.id
+
+    # close stale state and re-query with relationship
+    db.expunge(db_transaction)
+
+    result = db.query(Transaction).options(
+        joinedload(Transaction.category_rel)
+    ).filter(Transaction.id == transaction_id).first()
+
+    logger.info(f"Transaction created: {result.id}")
+    return result
+
 
 
 def get_transactions(db: Session):
