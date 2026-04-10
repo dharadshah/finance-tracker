@@ -14,21 +14,25 @@ logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
+    #Create Database Tabes
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
+    #Seed Default Data
     try:
         seed_default_categories(db)
     finally:
         db.close()
 
+    # Create FastAPI Instance
     app = FastAPI(
         title   = settings.app_name,
         version = settings.app_version
     )
-
+    #Register Exception Handlers
     register_exception_handlers(app)
 
+    #Include Routers
     app.include_router(health.router)
     app.include_router(transactions.router)
     app.include_router(categories.router)

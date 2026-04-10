@@ -80,7 +80,7 @@ def test_category_not_found():
 def test_duplicate_category():
     client.post("/api/v1/categories", json={"name": "Test Transport Category"})
     response = client.post("/api/v1/categories", json={"name": "Test Transport Category"})
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_delete_category():

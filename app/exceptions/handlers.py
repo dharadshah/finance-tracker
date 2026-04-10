@@ -1,29 +1,24 @@
 import logging
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.exceptions.finance_exceptions import FinanceBaseException
+from app.exceptions.app_exceptions import AppError
 
 logger = logging.getLogger(__name__)
 
 
 def register_exception_handlers(app: FastAPI):
 
-    # --- Handler 1: HTTPException (404, 400, 422 etc.) ---
-    @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, exc: HTTPException):
+    # --- Handler 1: AppError and all subclasses ---
+    @app.exception_handler(AppError)
+    async def app_error_handler(request: Request, exc: AppError):
         logger.warning(
-            f"HTTP {exc.status_code} on {request.method} {request.url} "
-            f"-> {exc.detail}"
+            f"AppError {exc.status_code} on {request.method} {request.url} "
+            f"-> [{exc.code}] {exc.message}"
         )
         return JSONResponse(
             status_code = exc.status_code,
-            content     = {
-                "error"   : True,
-                "status"  : exc.status_code,
-                "message" : exc.detail,
-                "path"    : str(request.url)
-            }
+            content     = exc.to_response_content(str(request.url))
         )
 
     # --- Handler 2: Pydantic Validation Errors ---
@@ -40,43 +35,29 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code = 422,
             content     = {
-                "error"   : True,
-                "status"  : 422,
-                "message" : "Validation failed",
-                "errors"  : errors,
-                "path"    : str(request.url)
+                "error": {
+                    "code"   : "validation_error",
+                    "message": "Request validation failed",
+                    "errors" : errors
+                },
+                "path": str(request.url)
             }
         )
 
-    # --- Handler 3: Finance Domain Exceptions ---
-    @app.exception_handler(FinanceBaseException)
-    async def finance_exception_handler(request: Request, exc: FinanceBaseException):
-        logger.error(
-            f"Domain error on {request.method} {request.url} -> {exc.message}"
-        )
-        return JSONResponse(
-            status_code = 500,
-            content     = {
-                "error"   : True,
-                "status"  : 500,
-                "message" : exc.message,
-                "path"    : str(request.url)
-            }
-        )
-
-    # --- Handler 4: Unexpected Exceptions ---
+    # --- Handler 3: Unexpected Exceptions ---
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         logger.critical(
             f"Unexpected error on {request.method} {request.url} -> {str(exc)}",
-            exc_info = True
+            exc_info=True
         )
         return JSONResponse(
             status_code = 500,
             content     = {
-                "error"   : True,
-                "status"  : 500,
-                "message" : "An unexpected error occurred",
-                "path"    : str(request.url)
+                "error": {
+                    "code"   : "internal_error",
+                    "message": "An unexpected error occurred"
+                },
+                "path": str(request.url)
             }
         )

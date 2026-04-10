@@ -3,15 +3,18 @@ from sqlalchemy.orm import Session
 from app.repository import transaction_repository
 from app.schemas import TransactionCreate
 from app.schemas.transaction_schema import TransactionResponse
-from app.exceptions.finance_exceptions import TransactionNotFoundException
-from app.dependencies import get_logger
+from app.exceptions.app_exceptions import NotFoundError, InternalError
 
-logger = get_logger("app.services.transaction_service")
+logger = logging.getLogger(__name__)
 
 
 def create_transaction(db: Session, transaction: TransactionCreate):
-    result = transaction_repository.create_transaction(db, transaction)
-    return TransactionResponse.from_orm_with_rel(result)
+    try:
+        result = transaction_repository.create_transaction(db, transaction)
+        return TransactionResponse.from_orm_with_rel(result)
+    except Exception as e:
+        logger.error(f"Failed to create transaction: {e}")
+        raise InternalError(f"Failed to create transaction: {str(e)}")
 
 
 def get_transactions(db: Session):
@@ -22,19 +25,19 @@ def get_transactions(db: Session):
 def get_transaction(db: Session, transaction_id: int):
     transaction = transaction_repository.get_transaction(db, transaction_id)
     if not transaction:
-        raise TransactionNotFoundException(transaction_id)
+        raise NotFoundError(f"Transaction with id {transaction_id} not found")
     return TransactionResponse.from_orm_with_rel(transaction)
 
 
 def update_transaction(db: Session, transaction_id: int, data: TransactionCreate):
     updated = transaction_repository.update_transaction(db, transaction_id, data)
     if not updated:
-        raise TransactionNotFoundException(transaction_id)
+        raise NotFoundError(f"Transaction with id {transaction_id} not found")
     return TransactionResponse.from_orm_with_rel(updated)
 
 
 def delete_transaction(db: Session, transaction_id: int):
     deleted = transaction_repository.delete_transaction(db, transaction_id)
     if not deleted:
-        raise TransactionNotFoundException(transaction_id)
+        raise NotFoundError(f"Transaction with id {transaction_id} not found")
     return deleted
