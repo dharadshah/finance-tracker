@@ -52,3 +52,14 @@ class TransactionResponse(BaseModel):
             category_id = obj.category_id,
             category    = obj.category_rel
         )
+
+class BulkTransactionCreate(BaseModel):
+    transactions: list[TransactionCreate]
+
+    @model_validator(mode="after")
+    def validate_bulk(self) -> "BulkTransactionCreate":
+        if len(self.transactions) == 0:
+            raise ValueError("At least one transaction is required")
+        if len(self.transactions) > 100:
+            raise ValueError("Maximum 100 transactions allowed per bulk create")
+        return self

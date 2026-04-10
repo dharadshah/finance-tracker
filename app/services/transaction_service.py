@@ -17,8 +17,31 @@ def create_transaction(db: Session, transaction: TransactionCreate):
         raise InternalError(f"Failed to create transaction: {str(e)}")
 
 
+def bulk_create_transactions(db: Session, transactions: list):
+    """Create multiple transactions atomically."""
+    try:
+        results = transaction_repository.bulk_create_transactions(db, transactions)
+        return [TransactionResponse.from_orm_with_rel(t) for t in results]
+    except Exception as e:
+        logger.error(f"Bulk create failed: {e}")
+        raise InternalError(f"Bulk create failed: {str(e)}")
+
+
 def get_transactions(db: Session):
     transactions = transaction_repository.get_transactions(db)
+    return [TransactionResponse.from_orm_with_rel(t) for t in transactions]
+
+
+def get_transactions_filtered(
+    db          : Session,
+    is_expense  : bool  = None,
+    min_amount  : float = None,
+    max_amount  : float = None,
+    category_id : int   = None
+):
+    transactions = transaction_repository.get_transactions_filtered(
+        db, is_expense, min_amount, max_amount, category_id
+    )
     return [TransactionResponse.from_orm_with_rel(t) for t in transactions]
 
 
@@ -41,3 +64,11 @@ def delete_transaction(db: Session, transaction_id: int):
     if not deleted:
         raise NotFoundError(f"Transaction with id {transaction_id} not found")
     return deleted
+
+
+def get_summary(db: Session) -> dict:
+    return transaction_repository.get_summary(db)
+
+
+def get_category_breakdown(db: Session) -> list:
+    return transaction_repository.get_category_breakdown(db)
