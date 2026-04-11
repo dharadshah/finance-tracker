@@ -71,13 +71,14 @@ def get_transactions_by_category(db: Session, category_id: int):
 
 
 def get_transactions_filtered(
-    db         : Session,
-    is_expense : bool  = None,
-    min_amount : float = None,
-    max_amount : float = None,
-    category_id: int   = None
+    db          : Session,
+    is_expense  : bool  = None,
+    min_amount  : float = None,
+    max_amount  : float = None,
+    category_id : int   = None,
+    limit       : int   = 10,
+    offset      : int   = 0
 ):
-    """ORM query with dynamic filters."""
     query = db.query(Transaction).options(
         joinedload(Transaction.category_rel)
     )
@@ -91,8 +92,7 @@ def get_transactions_filtered(
     if category_id is not None:
         query = query.filter(Transaction.category_id == category_id)
 
-    return query.order_by(desc(Transaction.amount)).all()
-
+    return query.order_by(desc(Transaction.amount)).offset(offset).limit(limit).all()
 
 def get_summary(db: Session) -> dict:
     """Native SQL query for financial summary."""

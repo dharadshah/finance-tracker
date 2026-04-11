@@ -37,13 +37,14 @@ def get_transactions_filtered(
     is_expense  : bool  = None,
     min_amount  : float = None,
     max_amount  : float = None,
-    category_id : int   = None
+    category_id : int   = None,
+    limit       : int   = 10,
+    offset      : int   = 0
 ):
     transactions = transaction_repository.get_transactions_filtered(
-        db, is_expense, min_amount, max_amount, category_id
+        db, is_expense, min_amount, max_amount, category_id, limit, offset
     )
     return [TransactionResponse.from_orm_with_rel(t) for t in transactions]
-
 
 def get_transaction(db: Session, transaction_id: int):
     transaction = transaction_repository.get_transaction(db, transaction_id)
