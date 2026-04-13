@@ -1,11 +1,13 @@
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.config.settings import settings
 from app.config.logging_config import setup_logging
 from app.config.database_config import engine, SessionLocal, Base
-from app.routes import transactions, categories
+from app.routes.categories import router as categories_router
+from app.routes.transactions import router as transactions_router
 from app import health
-from app.services.category_service import seed_default_categories
+from app.services.category_service import CategoryService
 from app.exceptions.handlers import register_exception_handlers
 
 setup_logging()
@@ -13,29 +15,33 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
+class VersionHeaderMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-API-Version"] = settings.app_version
+        return response
+
+
 def create_app() -> FastAPI:
-    #Create Database Tabes
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
-    #Seed Default Data
     try:
-        seed_default_categories(db)
+        CategoryService(db).seed_defaults()
     finally:
         db.close()
 
-    # Create FastAPI Instance
     app = FastAPI(
         title   = settings.app_name,
         version = settings.app_version
     )
-    #Register Exception Handlers
-    register_exception_handlers(app)
 
-    #Include Routers
+    register_exception_handlers(app)
+    app.add_middleware(VersionHeaderMiddleware)
+
     app.include_router(health.router)
-    app.include_router(transactions.router)
-    app.include_router(categories.router)
+    app.include_router(transactions_router)
+    app.include_router(categories_router)
 
     logger.info(f"{settings.app_name} started successfully")
 

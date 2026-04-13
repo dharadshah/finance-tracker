@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.config.database_config import Base
 from app.dependencies import get_db
-from app.services.category_service import seed_default_categories
+from app.services.category_service import CategoryService
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
@@ -38,13 +38,14 @@ def reset_db():
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
-        seed_default_categories(db)
+        CategoryService(db).seed_defaults()
     finally:
         db.close()
     yield
 
 
 client = TestClient(app)
+
 
 def test_create_category():
     response = client.post("/api/v1/categories", json={
@@ -64,7 +65,7 @@ def test_get_categories():
 
 
 def test_get_category_by_id():
-    create = client.post("/api/v1/categories", json={"name": "Test Housing Category"})
+    create      = client.post("/api/v1/categories", json={"name": "Test Housing Category"})
     category_id = create.json()["id"]
 
     response = client.get(f"/api/v1/categories/{category_id}")
@@ -84,8 +85,13 @@ def test_duplicate_category():
 
 
 def test_delete_category():
-    create = client.post("/api/v1/categories", json={"name": "Test Utilities Category"})
+    create      = client.post("/api/v1/categories", json={"name": "Test Utilities Category"})
     category_id = create.json()["id"]
 
     response = client.delete(f"/api/v1/categories/{category_id}")
     assert response.status_code == 200
+
+
+def test_delete_category_not_found():
+    response = client.delete("/api/v1/categories/99999")
+    assert response.status_code == 404

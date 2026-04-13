@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import threading
+import time
 
 
 def run_fastapi():
@@ -13,10 +14,16 @@ def run_fastapi():
 
 
 def run_gradio():
-    subprocess.run([sys.executable, "app/ui/gradio_app.py"])
+    time.sleep(2)
+    subprocess.run(
+        [sys.executable, "-m", "app.ui.main"],
+        cwd = os.path.dirname(os.path.abspath(__file__))
+    )
 
 
 if __name__ == "__main__":
+    import os
+
     fastapi_thread = threading.Thread(target=run_fastapi)
     gradio_thread  = threading.Thread(target=run_gradio)
 

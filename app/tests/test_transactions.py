@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.config.database_config import Base
 from app.dependencies import get_db
-from app.services.category_service import seed_default_categories
+from app.services.category_service import CategoryService
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
@@ -38,7 +38,7 @@ def reset_db():
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
-        seed_default_categories(db)
+        CategoryService(db).seed_defaults()
     finally:
         db.close()
     yield
@@ -55,15 +55,16 @@ def test_create_transaction():
     })
     assert response.status_code == 200
     data = response.json()
-    assert data["description"] == "Salary"
-    assert data["amount"]      == 50000
+    assert data["description"]       == "Salary"
+    assert data["amount"]            == 50000
+    assert data["transaction_type"]  == "INCOME"
     assert data["id"] is not None
 
 
 def test_create_transaction_with_category():
-    categories  = client.get("/api/v1/categories").json()
-    income_cat  = next((c for c in categories if c["name"] == "Income"), None)
-    assert income_cat is not None, "Income category should be seeded"
+    categories = client.get("/api/v1/categories").json()
+    income_cat = next((c for c in categories if c["name"] == "Income"), None)
+    assert income_cat is not None
     category_id = income_cat["id"]
 
     response = client.post("/api/v1/transactions", json={
@@ -74,12 +75,6 @@ def test_create_transaction_with_category():
     })
     assert response.status_code == 200
     data = response.json()
-
-    # debug - print full response
-    print("\nFull response:", data)
-    print("category_id in response:", data.get("category_id"))
-    print("category in response:", data.get("category"))
-
     assert data["category_id"]      == category_id
     assert data["category"]["name"] == "Income"
 
@@ -144,3 +139,55 @@ def test_delete_transaction():
 
     response = client.delete(f"/api/v1/transactions/{transaction_id}")
     assert response.status_code == 200
+
+
+def test_bulk_create_transactions():
+    response = client.post("/api/v1/transactions/bulk", json={
+        "transactions": [
+            {"description": "Salary",   "amount": 50000, "is_expense": False},
+            {"description": "Grocery",  "amount": 2500,  "is_expense": True},
+            {"description": "Netflix",  "amount": 649,   "is_expense": True}
+        ]
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+
+
+def test_get_summary():
+    client.post("/api/v1/transactions", json={
+        "description": "Salary",
+        "amount"     : 50000,
+        "is_expense" : False
+    })
+    client.post("/api/v1/transactions", json={
+        "description": "Grocery",
+        "amount"     : 2500,
+        "is_expense" : True
+    })
+
+    response = client.get("/api/v1/transactions/summary")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_income"]    == 50000
+    assert data["total_expenses"]  == 2500
+    assert data["balance"]         == 47500
+    assert data["savings_rate"]    == 95.0
+
+
+def test_get_filtered_transactions():
+    client.post("/api/v1/transactions", json={
+        "description": "Salary",
+        "amount"     : 50000,
+        "is_expense" : False
+    })
+    client.post("/api/v1/transactions", json={
+        "description": "Grocery",
+        "amount"     : 2500,
+        "is_expense" : True
+    })
+
+    response = client.get("/api/v1/transactions/filter?is_expense=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert all(t["is_expense"] for t in data)

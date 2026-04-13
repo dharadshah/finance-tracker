@@ -1,41 +1,48 @@
+"""Category repository - database operations for Category model."""
 import logging
 from sqlalchemy.orm import Session
+from typing import List, Optional
+from app.repository.base_repository import BaseRepository
 from app.models import Category
 from app.schemas import CategoryCreate
-from app.dependencies import get_logger
 
-logger = get_logger("app.repository.category_repository")
-
-
-def create_category(db: Session, category: CategoryCreate):
-    db_category = Category(
-        name        = category.name,
-        description = category.description
-    )
-    db.add(db_category)
-    db.commit()
-    db.refresh(db_category)
-    logger.info(f"Category created: {db_category.name}")
-    return db_category
+logger = logging.getLogger(__name__)
 
 
-def get_categories(db: Session):
-    return db.query(Category).all()
+class CategoryRepository(BaseRepository[Category]):
+    """Repository for Category database operations."""
 
+    def __init__(self, db: Session):
+        super().__init__(Category, db)
 
-def get_category(db: Session, category_id: int):
-    return db.query(Category).filter(Category.id == category_id).first()
+    def create(self, category: CategoryCreate) -> Category:
+        """Create a new category.
 
+        Args:
+            category: CategoryCreate schema.
 
-def get_category_by_name(db: Session, name: str):
-    return db.query(Category).filter(Category.name == name).first()
+        Returns:
+            Created Category model.
+        """
+        db_category = Category(
+            name        = category.name,
+            description = category.description
+        )
+        return self.save(db_category)
 
+    def get_by_name(self, name: str) -> Optional[Category]:
+        """Fetch a category by name.
 
-def delete_category(db: Session, category_id: int):
-    category = get_category(db, category_id)
-    if category:
-        db.delete(category)
-        db.commit()
-        logger.info(f"Category deleted: {category_id}")
-        return True
-    return False
+        Args:
+            name: Category name to search.
+
+        Returns:
+            Category if found, None otherwise.
+        """
+        return self.db.query(Category).filter(
+            Category.name == name
+        ).first()
+
+    def get_all_categories(self) -> List[Category]:
+        """Fetch all categories."""
+        return self.get_all()
