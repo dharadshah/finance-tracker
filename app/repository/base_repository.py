@@ -5,7 +5,7 @@ from typing import Generic, TypeVar, Type, List, Optional
 from sqlalchemy.orm import Session
 from app.config.database_config import Base
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 ModelType = TypeVar("ModelType", bound=Base)
 

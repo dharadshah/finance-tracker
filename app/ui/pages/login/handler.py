@@ -1,7 +1,7 @@
 """Authentication handler - mock implementation."""
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 # Mock credentials - will be replaced with real API call later
 MOCK_USERS = {

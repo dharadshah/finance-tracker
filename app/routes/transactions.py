@@ -1,4 +1,3 @@
-"""Transaction routes for Personal Finance Tracker API."""
 import logging
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -9,8 +8,6 @@ from app.config.settings import Settings
 from app.services.transaction_service import TransactionService
 from app.schemas import TransactionCreate, TransactionResponse, BulkTransactionCreate
 from app.constants.app_constants import ROUTE_CONSTANTS
-
-logger = logging.getLogger(__name__)
 
 
 class TransactionRouter(BaseRouter):
@@ -23,7 +20,6 @@ class TransactionRouter(BaseRouter):
         )
 
     def register(self) -> APIRouter:
-        """Register all transaction routes."""
 
         @self.router.post("", response_model=TransactionResponse)
         async def create_transaction(
@@ -115,5 +111,4 @@ class TransactionRouter(BaseRouter):
         return self.router
 
 
-# module level instance
 router = TransactionRouter().register()

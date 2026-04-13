@@ -1,13 +1,12 @@
 """Transaction service - business logic for transaction operations."""
-import logging
 from sqlalchemy.orm import Session
 from app.services.base_service import BaseService
 from app.repository.transaction_repository import TransactionRepository
 from app.schemas import TransactionCreate
 from app.schemas.transaction_schema import TransactionResponse, BulkTransactionCreate
 from app.exceptions.app_exceptions import NotFoundError, InternalError
-
-logger = logging.getLogger(__name__)
+from sqlalchemy.exc import IntegrityError
+from app.exceptions.app_exceptions import NotFoundError, InternalError, ValidationError
 
 
 class TransactionService(BaseService):
@@ -37,6 +36,9 @@ class TransactionService(BaseService):
             result = self.repository.create(transaction)
             self.logger.info(f"Transaction created: {result.id}")
             return self._to_response(result)
+        except IntegrityError as e:
+            self.logger.error(f"Integrity error creating transaction: {e}")
+            raise ValidationError("Invalid category_id - category does not exist")
         except Exception as e:
             self.logger.error(f"Failed to create transaction: {e}")
             raise InternalError(f"Failed to create transaction: {str(e)}")

@@ -1,4 +1,4 @@
-import logging
+from app.config.logging_config import logger
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.config.settings import settings
@@ -12,7 +12,6 @@ from app.exceptions.handlers import register_exception_handlers
 
 setup_logging()
 
-logger = logging.getLogger(__name__)
 
 
 class VersionHeaderMiddleware(BaseHTTPMiddleware):

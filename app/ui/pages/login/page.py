@@ -5,7 +5,7 @@ from app.ui.pages import BasePage
 from app.ui.pages.login.handler import AuthHandler
 from app.ui.state.session import SessionState
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 
 class LoginPage(BasePage):

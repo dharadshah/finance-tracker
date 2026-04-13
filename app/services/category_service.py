@@ -1,5 +1,4 @@
 """Category service - business logic for category operations."""
-import logging
 from sqlalchemy.orm import Session
 from app.services.base_service import BaseService
 from app.repository.category_repository import CategoryRepository
@@ -7,7 +6,6 @@ from app.schemas import CategoryCreate, CategoryResponse
 from app.exceptions.app_exceptions import NotFoundError, ConflictError
 from app.constants.app_constants import DEFAULT_CATEGORIES
 
-logger = logging.getLogger(__name__)
 
 
 class CategoryService(BaseService):

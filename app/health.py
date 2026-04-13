@@ -1,8 +1,7 @@
 import logging
 from fastapi import APIRouter
 from app.config.settings import settings
-
-logger = logging.getLogger(__name__)
+from app.config.logging_config import logger
 
 router = APIRouter(tags=["Health"])
 

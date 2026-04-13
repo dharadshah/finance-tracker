@@ -1,12 +1,9 @@
 """Category repository - database operations for Category model."""
-import logging
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.repository.base_repository import BaseRepository
 from app.models import Category
 from app.schemas import CategoryCreate
-
-logger = logging.getLogger(__name__)
 
 
 class CategoryRepository(BaseRepository[Category]):

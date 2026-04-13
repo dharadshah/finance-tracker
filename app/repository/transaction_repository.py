@@ -1,13 +1,10 @@
 """Transaction repository - database operations for Transaction model."""
-import logging
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text, desc
 from typing import List, Optional
 from app.repository.base_repository import BaseRepository
 from app.models import Transaction
 from app.schemas import TransactionCreate
-
-logger = logging.getLogger(__name__)
 
 
 class TransactionRepository(BaseRepository[Transaction]):

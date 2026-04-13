@@ -1,10 +1,8 @@
-import logging
+from app.config.logging_config import logger
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.exceptions.app_exceptions import AppError
-
-logger = logging.getLogger(__name__)
 
 
 def register_exception_handlers(app: FastAPI):

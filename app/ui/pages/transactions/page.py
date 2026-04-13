@@ -4,7 +4,7 @@ import logging
 from app.ui.pages import BasePage
 from app.ui.state.session import SessionState
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 
 class TransactionsPage(BasePage):

@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from app.config.database_config import Base
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 
 class Transaction(Base):

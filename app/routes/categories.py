@@ -2,16 +2,16 @@
 import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from logging import Logger
+from app.config.logging_config import logger
 from typing import List
 from app.routes.base_router import BaseRouter
-from app.dependencies import get_db, get_settings, get_logger
+from app.dependencies import get_db, get_settings
 from app.config.settings import Settings
 from app.services.category_service import CategoryService
 from app.schemas import CategoryCreate, CategoryResponse
 from app.constants.app_constants import ROUTE_CONSTANTS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 
 class CategoryRouter(BaseRouter):

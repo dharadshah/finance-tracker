@@ -1,7 +1,7 @@
 import logging
 from app.constants.app_constants import SAVINGS_RATE
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.models.transaction")
 
 
 def calculate_savings_rate(total_income: float, total_expenses: float) -> float:
