@@ -1,10 +1,13 @@
 """Transaction repository - database operations for Transaction model."""
+import logging
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import text, desc
+from sqlalchemy import desc, func, case, literal_column
 from typing import List, Optional
 from app.repository.base_repository import BaseRepository
-from app.models import Transaction
+from app.models import Transaction, Category
 from app.schemas import TransactionCreate
+
+logger = logging.getLogger("app.repository.TransactionRepository")
 
 
 class TransactionRepository(BaseRepository[Transaction]):
@@ -88,7 +91,9 @@ class TransactionRepository(BaseRepository[Transaction]):
 
     def get_all_with_category(self) -> List[Transaction]:
         """Fetch all transactions with categories loaded."""
-        return self._query_with_category().all()
+        return self._query_with_category().order_by(
+            desc(Transaction.id)
+        ).all()
 
     def get_filtered(
         self,
@@ -99,7 +104,7 @@ class TransactionRepository(BaseRepository[Transaction]):
         limit       : int   = 10,
         offset      : int   = 0
     ) -> List[Transaction]:
-        """Fetch transactions with dynamic filters.
+        """Fetch transactions with dynamic ORM filters.
 
         Args:
             is_expense  : Filter by expense or income.
@@ -123,7 +128,22 @@ class TransactionRepository(BaseRepository[Transaction]):
         if category_id is not None:
             query = query.filter(Transaction.category_id == category_id)
 
-        return query.order_by(desc(Transaction.amount)).offset(offset).limit(limit).all()
+        return query.order_by(
+            desc(Transaction.amount)
+        ).offset(offset).limit(limit).all()
+
+    def get_transactions_by_category(self, category_id: int) -> List[Transaction]:
+        """Fetch all transactions for a specific category.
+
+        Args:
+            category_id: Category primary key.
+
+        Returns:
+            List of transactions in that category.
+        """
+        return self._query_with_category().filter(
+            Transaction.category_id == category_id
+        ).all()
 
     def update(self, transaction_id: int, data: TransactionCreate) -> Optional[Transaction]:
         """Update a transaction.
@@ -147,61 +167,79 @@ class TransactionRepository(BaseRepository[Transaction]):
         return None
 
     def get_summary(self) -> dict:
-        """Native SQL financial summary.
+        """ORM-based financial summary using SQLAlchemy func.
+
+        Uses func.sum with case expressions — ORM layer,
+        no raw SQL strings.
 
         Returns:
             Dict with income, expenses, balance, savings rate.
         """
-        result = self.db.execute(
-            text("""
-                SELECT
-                    COALESCE(SUM(CASE WHEN is_expense = 0 THEN amount ELSE 0 END), 0) as total_income,
-                    COALESCE(SUM(CASE WHEN is_expense = 1 THEN amount ELSE 0 END), 0) as total_expenses,
-                    COUNT(id) as transaction_count
-                FROM transactions
-            """)
-        ).mappings().first()
+        result = self.db.query(
+            func.coalesce(
+                func.sum(
+                    case(
+                        (Transaction.is_expense == False, Transaction.amount),
+                        else_=0
+                    )
+                ), 0
+            ).label("total_income"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (Transaction.is_expense == True, Transaction.amount),
+                        else_=0
+                    )
+                ), 0
+            ).label("total_expenses"),
+            func.count(Transaction.id).label("transaction_count")
+        ).first()
 
-        total_income   = float(result["total_income"])
-        total_expenses = float(result["total_expenses"])
+        total_income   = float(result.total_income)
+        total_expenses = float(result.total_expenses)
         balance        = total_income - total_expenses
-        savings_rate   = round((balance / total_income * 100), 2) if total_income > 0 else 0.0
+        savings_rate   = round(
+            (balance / total_income * 100), 2
+        ) if total_income > 0 else 0.0
 
         return {
             "total_income"      : total_income,
             "total_expenses"    : total_expenses,
             "balance"           : balance,
             "savings_rate"      : savings_rate,
-            "transaction_count" : result["transaction_count"]
+            "transaction_count" : result.transaction_count
         }
 
     def get_category_breakdown(self) -> list:
-        """Native SQL aggregation by category.
+        """ORM-based expense breakdown by category using SQLAlchemy func.
+
+        Uses func.count, func.sum, func.avg with ORM join —
+        no raw SQL strings.
 
         Returns:
             List of dicts with category spending breakdown.
         """
-        result = self.db.execute(
-            text("""
-                SELECT
-                    COALESCE(c.name, 'Uncategorized') as category,
-                    COUNT(t.id)                        as transaction_count,
-                    SUM(t.amount)                      as total_amount,
-                    AVG(t.amount)                      as avg_amount
-                FROM transactions t
-                LEFT JOIN categories c ON t.category_id = c.id
-                WHERE t.is_expense = 1
-                GROUP BY c.name
-                ORDER BY total_amount DESC
-            """)
-        ).mappings().all()
+        results = self.db.query(
+            func.coalesce(Category.name, "Uncategorized").label("category"),
+            func.count(Transaction.id).label("transaction_count"),
+            func.sum(Transaction.amount).label("total_amount"),
+            func.avg(Transaction.amount).label("avg_amount")
+        ).outerjoin(
+            Category, Transaction.category_id == Category.id
+        ).filter(
+            Transaction.is_expense == True
+        ).group_by(
+            Category.name
+        ).order_by(
+            desc("total_amount")
+        ).all()
 
         return [
             {
-                "category"          : row["category"],
-                "transaction_count" : row["transaction_count"],
-                "total_amount"      : round(float(row["total_amount"]), 2),
-                "avg_amount"        : round(float(row["avg_amount"]), 2)
+                "category"          : row.category,
+                "transaction_count" : row.transaction_count,
+                "total_amount"      : round(float(row.total_amount), 2),
+                "avg_amount"        : round(float(row.avg_amount), 2)
             }
-            for row in result
+            for row in results
         ]
