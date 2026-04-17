@@ -1,7 +1,2 @@
-from app.ai.llm.factory import llm_factory
-from app.ai.chains.finance_chains import (
-    ClassifyTransactionChain,
-    AnalyseTransactionChain,
-    SummariseTransactionsChain,
-    FinancialAdviceChain
-)
+# app/ai/__init__.py
+# empty - import directly from submodules as needed
