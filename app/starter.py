@@ -1,5 +1,7 @@
+"""Application bootstrap for Personal Finance Tracker."""
 import logging
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.config.settings import settings
 from app.config.logging_config import setup_logging
@@ -27,7 +29,6 @@ class VersionHeaderMiddleware(BaseHTTPMiddleware):
 def create_app() -> FastAPI:
     Base.metadata.create_all(bind=engine)
 
-    # Setup LangSmith tracing
     setup_langsmith()
 
     db = SessionLocal()
@@ -42,7 +43,15 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
+
     app.add_middleware(VersionHeaderMiddleware)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins     = ["*"],
+        allow_credentials = True,
+        allow_methods     = ["*"],
+        allow_headers     = ["*"]
+    )
 
     app.include_router(health.router)
     app.include_router(transactions_router)

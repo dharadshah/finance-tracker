@@ -12,6 +12,9 @@ from app.ai.llm.factory import LLMClientFactory
 from app.repository.transaction_repository import TransactionRepository
 from app.exceptions.app_exceptions import NotFoundError, InternalError
 from app.config.langsmith_config import get_trace_metadata
+from app.ai.rag.document_builder import TransactionDocumentBuilder
+from app.ai.rag.index_manager import IndexManager
+from app.ai.rag.query_engine import FinanceQueryEngine
 
 logger = logging.getLogger("app.services.ai_service")
 
@@ -114,3 +117,34 @@ class AIService(BaseService):
         except Exception as e:
             self.logger.error(f"Advice generation failed: {e}")
             raise InternalError(f"Advice generation failed: {str(e)}")
+
+    def query_finances(self, question: str) -> dict:
+        """Answer a natural language question about finances using RAG.
+
+        Builds an index from all transactions and queries it.
+
+        Args:
+            question: Natural language question about finances.
+
+        Returns:
+            Dict with answer and source documents.
+
+        Raises:
+            NotFoundError : If no transactions exist.
+            InternalError : If RAG query fails.
+        """
+        self.logger.info(f"RAG query: {question}")
+
+        transactions = self.repository.get_all_with_category()
+        if not transactions:
+            raise NotFoundError("No transactions found for querying")
+
+        try:
+            engine = FinanceQueryEngine()
+            engine.build_index(transactions)
+            result = engine.query(question)
+            self.logger.info("RAG query completed")
+            return result
+        except Exception as e:
+            self.logger.error(f"RAG query failed: {e}")
+            raise InternalError(f"RAG query failed: {str(e)}")

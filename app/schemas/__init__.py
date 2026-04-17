@@ -9,6 +9,8 @@ from app.schemas.ai_schema import (
     ClassifyResponse,
     AdviceRequest,
     AdviceResponse,
-    AnalysisReport
+    AnalysisReport,
+    RAGQueryRequest,
+    RAGQueryResponse
 )
 from app.schemas.types import Amount, ShortString, LongString

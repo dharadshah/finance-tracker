@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     langchain_endpoint      : str   = "https://api.smith.langchain.com"
     langchain_api_key       : str   = ""
     langchain_project       : str   = "finance-tracker"
+    hf_hub_disable_symlinks_warning : str = "1"
 
     model_config = SettingsConfigDict(
         env_file          = ".env",

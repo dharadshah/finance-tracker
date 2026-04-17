@@ -11,7 +11,9 @@ from app.schemas.ai_schema import (
     ClassifyResponse,
     AdviceRequest,
     AdviceResponse,
-    AnalysisReport
+    AnalysisReport,
+    RAGQueryRequest,
+    RAGQueryResponse    
 )
 from app.constants.app_constants import ROUTE_CONSTANTS
 
@@ -72,6 +74,16 @@ class AIRouter(BaseRouter):
                 savings_rate   = request.savings_rate,
                 top_category   = request.top_category
             )
+
+        @self.router.post("/query", response_model=RAGQueryResponse)
+        async def query_finances(
+            request  : RAGQueryRequest,
+            db       : Session  = Depends(get_db),
+            settings : Settings = Depends(get_settings)
+        ):
+            """Answer natural language questions about your finances using RAG."""
+            self.logger.info(f"RAG query: {request.question}")
+            return AIService(db).query_finances(request.question)
 
         return self.router
 

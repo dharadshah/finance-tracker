@@ -84,3 +84,31 @@ class AnalysisReport(BaseModel):
     advice        : str
     has_high_risk : bool
     error         : Optional[str] = None
+
+class RAGQueryRequest(BaseModel):
+    """Request schema for RAG query.
+
+    Attributes:
+        question: Natural language question about finances.
+    """
+    question: ShortString
+
+    @field_validator("question")
+    @classmethod
+    def question_must_not_be_empty(cls, value):
+        if not value.strip():
+            raise ValueError("Question cannot be empty")
+        return value.strip()
+
+
+class RAGQueryResponse(BaseModel):
+    """Response schema for RAG query.
+
+    Attributes:
+        question: Original question.
+        answer  : LLM generated answer.
+        sources : List of source documents used.
+    """
+    question : str
+    answer   : str
+    sources  : list
