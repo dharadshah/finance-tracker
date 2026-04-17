@@ -11,46 +11,22 @@ from app.ai.chains.finance_chains import (
 from app.ai.llm.factory import LLMClientFactory
 from app.repository.transaction_repository import TransactionRepository
 from app.exceptions.app_exceptions import NotFoundError, InternalError
+from app.config.langsmith_config import get_trace_metadata
 
 logger = logging.getLogger("app.services.ai_service")
 
 
 class AIService(BaseService):
-    """Service handling all AI-powered operations.
-
-    Orchestrates:
-        - Transaction classification via ClassifyTransactionChain
-        - Full financial analysis via FinanceAgent
-        - AI-powered summary via SummariseTransactionsChain
-        - Financial advice via FinancialAdviceChain
-
-    All LLM calls go through this service — routes never
-    interact with chains or agents directly.
-    """
+    """Service handling all AI-powered operations."""
 
     def __init__(self, db: Session):
-        """Initialize with database session and LLM factory.
-
-        Args:
-            db: SQLAlchemy database session.
-        """
         super().__init__(db)
         self.repository  = TransactionRepository(db)
         self.llm_factory = LLMClientFactory()
         self.llm_client  = self.llm_factory.get_groq_client()
 
     def classify_transaction(self, description: str) -> dict:
-        """Classify a single transaction description.
-
-        Args:
-            description: Transaction description to classify.
-
-        Returns:
-            Dict with classification result.
-
-        Raises:
-            InternalError: If classification fails.
-        """
+        """Classify a single transaction description."""
         self.logger.info(f"Classifying transaction: {description}")
         try:
             chain  = ClassifyTransactionChain(self.llm_client)
@@ -64,18 +40,7 @@ class AIService(BaseService):
             raise InternalError(f"Classification failed: {str(e)}")
 
     def analyse_transactions(self) -> dict:
-        """Run full financial analysis using the FinanceAgent.
-
-        Fetches all transactions from DB and runs the complete
-        LangGraph workflow: classify -> analyse -> summarise -> advice.
-
-        Returns:
-            Complete financial analysis report dict.
-
-        Raises:
-            NotFoundError : If no transactions exist.
-            InternalError : If agent execution fails.
-        """
+        """Run full financial analysis using the FinanceAgent."""
         self.logger.info("Running full financial analysis")
 
         transactions = self.repository.get_all_with_category()
@@ -102,18 +67,7 @@ class AIService(BaseService):
             raise InternalError(f"Financial analysis failed: {str(e)}")
 
     def get_ai_summary(self) -> dict:
-        """Generate AI-powered financial summary using chain directly.
-
-        Lighter alternative to full agent analysis.
-        Uses SummariseTransactionsChain without classification step.
-
-        Returns:
-            Financial summary dict.
-
-        Raises:
-            NotFoundError : If no transactions exist.
-            InternalError : If summary generation fails.
-        """
+        """Generate AI-powered financial summary."""
         self.logger.info("Generating AI summary")
 
         transactions = self.repository.get_all_with_category()
@@ -146,20 +100,7 @@ class AIService(BaseService):
         savings_rate   : float,
         top_category   : str
     ) -> dict:
-        """Generate personalised financial advice.
-
-        Args:
-            total_income   : Total income amount.
-            total_expenses : Total expenses amount.
-            savings_rate   : Savings rate percentage.
-            top_category   : Largest expense category.
-
-        Returns:
-            Dict with advice string.
-
-        Raises:
-            InternalError: If advice generation fails.
-        """
+        """Generate personalised financial advice."""
         self.logger.info("Generating financial advice")
         try:
             chain  = FinancialAdviceChain(self.llm_client)

@@ -1,8 +1,9 @@
-from app.config.logging_config import logger
+import logging
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.config.settings import settings
 from app.config.logging_config import setup_logging
+from app.config.langsmith_config import setup_langsmith
 from app.config.database_config import engine, SessionLocal, Base
 from app.routes.categories import router as categories_router
 from app.routes.transactions import router as transactions_router
@@ -13,6 +14,7 @@ from app.exceptions.handlers import register_exception_handlers
 
 setup_logging()
 
+logger = logging.getLogger("app.starter")
 
 
 class VersionHeaderMiddleware(BaseHTTPMiddleware):
@@ -24,6 +26,9 @@ class VersionHeaderMiddleware(BaseHTTPMiddleware):
 
 def create_app() -> FastAPI:
     Base.metadata.create_all(bind=engine)
+
+    # Setup LangSmith tracing
+    setup_langsmith()
 
     db = SessionLocal()
     try:
