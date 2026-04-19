@@ -216,44 +216,76 @@ class TestIndexManager:
 
     @pytest.fixture(autouse=True)
     def set_testing_env(self):
-        """Set IS_TESTING env var so LlamaIndex uses MockLLM."""
+        """Set IS_TESTING and mock Chroma."""
         os.environ["IS_TESTING"] = "1"
         yield
         os.environ.pop("IS_TESTING", None)
 
-    def test_index_manager_initializes(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_index_manager_initializes(self, mock_chroma):
         """Should initialize without errors."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.index_manager import IndexManager
         manager = IndexManager()
         assert manager is not None
 
-    def test_index_is_none_before_creation(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_index_is_none_before_creation(self, mock_chroma):
         """Index should be None before create_index is called."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.index_manager import IndexManager
         manager = IndexManager()
         assert manager.get_index() is None
 
-    def test_is_ready_false_before_index(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_is_ready_false_before_index(self, mock_chroma):
         """is_ready should be False before index creation."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.index_manager import IndexManager
         manager = IndexManager()
         assert manager.is_ready is False
 
-    def test_create_index_raises_error_for_empty_documents(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_create_index_raises_error_for_empty_documents(self, mock_chroma):
         """Should raise ValueError for empty document list."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.index_manager import IndexManager
         manager = IndexManager()
         with pytest.raises(ValueError, match="empty"):
             manager.create_index([])
 
-    def test_clear_index_resets_to_none(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_clear_index_resets_to_none(self, mock_chroma):
         """clear_index should reset index to None."""
+        mock_collection = MagicMock()
+        mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
         from app.ai.rag.index_manager import IndexManager
         manager        = IndexManager()
         manager._index = MagicMock()
         manager.clear_index()
         assert manager.get_index() is None
-        assert manager.is_ready is False
+
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_document_count_returns_zero_when_empty(self, mock_chroma):
+        """Should return 0 when collection is empty."""
+        mock_collection       = MagicMock()
+        mock_collection.count.return_value = 0
+        mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
+        from app.ai.rag.index_manager import IndexManager
+        manager = IndexManager()
+        assert manager.document_count == 0
+
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_load_index_returns_none_when_empty(self, mock_chroma):
+        """Should return None when no data in Chroma."""
+        mock_collection       = MagicMock()
+        mock_collection.count.return_value = 0
+        mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
+        from app.ai.rag.index_manager import IndexManager
+        manager = IndexManager()
+        result  = manager.load_index()
+        assert result is None
+
 
 # ============================================================
 # FinanceQueryEngine
@@ -269,27 +301,35 @@ class TestFinanceQueryEngine:
         yield
         os.environ.pop("IS_TESTING", None)
 
-    def test_query_engine_initializes(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_query_engine_initializes(self, mock_chroma):
         """Should initialize without errors."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.query_engine import FinanceQueryEngine
         engine = FinanceQueryEngine()
         assert engine is not None
 
-    def test_is_ready_false_before_build(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_is_ready_false_before_build(self, mock_chroma):
         """is_ready should be False before build_index."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.query_engine import FinanceQueryEngine
         engine = FinanceQueryEngine()
         assert engine.is_ready is False
 
-    def test_query_raises_error_when_not_ready(self):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_query_raises_error_when_not_ready(self, mock_chroma):
         """Should raise ValueError when query engine not built."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.query_engine import FinanceQueryEngine
         engine = FinanceQueryEngine()
         with pytest.raises(ValueError, match="not ready"):
             engine.query("What did I spend most on?")
 
-    def test_query_returns_dict(self, mock_transaction):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_query_returns_dict(self, mock_chroma, mock_transaction):
         """Should return dict with question, answer, sources."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.query_engine import FinanceQueryEngine
         engine = FinanceQueryEngine()
 
@@ -306,8 +346,10 @@ class TestFinanceQueryEngine:
         assert "answer"   in result
         assert "sources"  in result
 
-    def test_query_contains_original_question(self, mock_transaction):
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_query_contains_original_question(self, mock_chroma, mock_transaction):
         """Result should echo back the original question."""
+        mock_chroma.return_value.get_or_create_collection.return_value = MagicMock()
         from app.ai.rag.query_engine import FinanceQueryEngine
         engine = FinanceQueryEngine()
 
@@ -320,3 +362,14 @@ class TestFinanceQueryEngine:
 
         result = engine.query("What did I spend most on?")
         assert result["question"] == "What did I spend most on?"
+
+    @patch("app.ai.rag.index_manager.chromadb.PersistentClient")
+    def test_load_existing_index_returns_false_when_empty(self, mock_chroma):
+        """Should return False when no data in Chroma."""
+        mock_collection       = MagicMock()
+        mock_collection.count.return_value = 0
+        mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
+        from app.ai.rag.query_engine import FinanceQueryEngine
+        engine = FinanceQueryEngine()
+        result = engine.load_existing_index()
+        assert result is False

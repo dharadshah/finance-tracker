@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 venv/
 logs/
+chroma_db/
 .DS_Store
 *.db
 *.log

@@ -148,3 +148,75 @@ class AIService(BaseService):
         except Exception as e:
             self.logger.error(f"RAG query failed: {e}")
             raise InternalError(f"RAG query failed: {str(e)}")
+
+    def query_finances(self, question: str) -> dict:
+        """Answer a natural language question about finances using RAG.
+
+        Tries to load existing Chroma index first.
+        If no index exists, builds one from current transactions.
+
+        Args:
+            question: Natural language question about finances.
+
+        Returns:
+            Dict with answer and source documents.
+
+        Raises:
+            NotFoundError : If no transactions exist.
+            InternalError : If RAG query fails.
+        """
+        self.logger.info(f"RAG query: {question}")
+
+        try:
+            engine = FinanceQueryEngine()
+
+            # Try loading existing persisted index first
+            loaded = engine.load_existing_index()
+
+            if not loaded:
+                # No persisted index - build from transactions
+                transactions = self.repository.get_all_with_category()
+                if not transactions:
+                    raise NotFoundError("No transactions found for querying")
+                engine.build_index(transactions)
+
+            result = engine.query(question)
+            self.logger.info("RAG query completed")
+            return result
+
+        except NotFoundError:
+            raise
+        except Exception as e:
+            self.logger.error(f"RAG query failed: {e}")
+            raise InternalError(f"RAG query failed: {str(e)}")
+
+
+        def rebuild_finance_index(self) -> dict:
+            """Rebuild the vector index from all current transactions.
+
+            Use this after bulk transaction changes to keep index fresh.
+
+            Returns:
+                Dict with rebuild status and document count.
+
+            Raises:
+                NotFoundError : If no transactions exist.
+                InternalError : If rebuild fails.
+            """
+            self.logger.info("Rebuilding finance vector index")
+
+            transactions = self.repository.get_all_with_category()
+            if not transactions:
+                raise NotFoundError("No transactions found to index")
+
+            try:
+                engine = FinanceQueryEngine()
+                engine.rebuild_index(transactions)
+                return {
+                    "status"         : "success",
+                    "document_count" : engine.document_count,
+                    "message"        : "Vector index rebuilt successfully"
+                }
+            except Exception as e:
+                self.logger.error(f"Index rebuild failed: {e}")
+                raise InternalError(f"Index rebuild failed: {str(e)}")

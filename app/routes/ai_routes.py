@@ -85,6 +85,15 @@ class AIRouter(BaseRouter):
             self.logger.info(f"RAG query: {request.question}")
             return AIService(db).query_finances(request.question)
 
+        @self.router.post("/rebuild-index")
+        async def rebuild_index(
+            db       : Session  = Depends(get_db),
+            settings : Settings = Depends(get_settings)
+        ):
+            """Rebuild the vector index from all current transactions."""
+            self.logger.info("Rebuilding vector index")
+            return AIService(db).rebuild_finance_index()
+
         return self.router
 
 
