@@ -10,6 +10,7 @@ from app.config.database_config import engine, SessionLocal, Base
 from app.routes.categories import router as categories_router
 from app.routes.transactions import router as transactions_router
 from app.routes.ai_routes import router as ai_router
+from app.routes.eval_routes import router as eval_router
 from app import health
 from app.services.category_service import CategoryService
 from app.exceptions.handlers import register_exception_handlers
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(transactions_router)
     app.include_router(categories_router)
     app.include_router(ai_router)
+    app.include_router(eval_router)
 
     logger.info(f"{settings.app_name} started successfully")
 

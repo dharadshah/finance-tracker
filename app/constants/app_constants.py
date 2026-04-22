@@ -27,6 +27,7 @@ class ROUTE_CONSTANTS(Enum):
     TRANSACTIONS_PREFIX  = "/api/v1/transactions"
     CATEGORIES_PREFIX    = "/api/v1/categories"
     AI_PREFIX            = "/api/v1/ai"
+    EVAL_PREFIX          = "/api/v1/eval"
 
 
 class TRANSACTION_TYPE(Enum):

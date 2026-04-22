@@ -64,7 +64,9 @@ def setup_logging():
         "filelock",
         "groq",
         "openai",
-        "openai._base_client"
+        "openai._base_client",
+        "trulens",
+        "litellm"
     ]
 
     for name in noisy_loggers:

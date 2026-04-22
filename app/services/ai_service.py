@@ -149,6 +149,7 @@ class AIService(BaseService):
             self.logger.error(f"RAG query failed: {e}")
             raise InternalError(f"RAG query failed: {str(e)}")
 
+
     def query_finances(self, question: str) -> dict:
         """Answer a natural language question about finances using RAG.
 
@@ -191,32 +192,32 @@ class AIService(BaseService):
             raise InternalError(f"RAG query failed: {str(e)}")
 
 
-        def rebuild_finance_index(self) -> dict:
-            """Rebuild the vector index from all current transactions.
+    def rebuild_finance_index(self) -> dict:
+        """Rebuild the vector index from all current transactions.
 
-            Use this after bulk transaction changes to keep index fresh.
+        Use this after bulk transaction changes to keep index fresh.
 
-            Returns:
-                Dict with rebuild status and document count.
+        Returns:
+            Dict with rebuild status and document count.
 
-            Raises:
-                NotFoundError : If no transactions exist.
-                InternalError : If rebuild fails.
-            """
-            self.logger.info("Rebuilding finance vector index")
+        Raises:
+            NotFoundError : If no transactions exist.
+            InternalError : If rebuild fails.
+        """
+        self.logger.info("Rebuilding finance vector index")
 
-            transactions = self.repository.get_all_with_category()
-            if not transactions:
-                raise NotFoundError("No transactions found to index")
+        transactions = self.repository.get_all_with_category()
+        if not transactions:
+            raise NotFoundError("No transactions found to index")
 
-            try:
-                engine = FinanceQueryEngine()
-                engine.rebuild_index(transactions)
-                return {
-                    "status"         : "success",
-                    "document_count" : engine.document_count,
-                    "message"        : "Vector index rebuilt successfully"
-                }
-            except Exception as e:
-                self.logger.error(f"Index rebuild failed: {e}")
-                raise InternalError(f"Index rebuild failed: {str(e)}")
+        try:
+            engine = FinanceQueryEngine()
+            engine.rebuild_index(transactions)
+            return {
+                "status"         : "success",
+                "document_count" : engine.document_count,
+                "message"        : "Vector index rebuilt successfully"
+            }
+        except Exception as e:
+            self.logger.error(f"Index rebuild failed: {e}")
+            raise InternalError(f"Index rebuild failed: {str(e)}")
