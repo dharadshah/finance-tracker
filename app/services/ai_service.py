@@ -9,41 +9,91 @@ from app.ai.chains.finance_chains import (
     FinancialAdviceChain
 )
 from app.ai.llm.factory import LLMClientFactory
-from app.repository.transaction_repository import TransactionRepository
-from app.exceptions.app_exceptions import NotFoundError, InternalError
-from app.config.langsmith_config import get_trace_metadata
-from app.ai.rag.document_builder import TransactionDocumentBuilder
-from app.ai.rag.index_manager import IndexManager
 from app.ai.rag.query_engine import FinanceQueryEngine
+from app.ai.security.prompt_guard import PromptGuard
+from app.ai.security.output_validator import OutputValidator
+from app.repository.transaction_repository import TransactionRepository
+from app.exceptions.app_exceptions import NotFoundError, InternalError, ValidationError
+from app.config.langsmith_config import get_trace_metadata
 
 logger = logging.getLogger("app.services.ai_service")
 
 
 class AIService(BaseService):
-    """Service handling all AI-powered operations."""
+    """Service handling all AI-powered operations.
+
+    Orchestrates:
+        - Transaction classification via ClassifyTransactionChain
+        - Full financial analysis via FinanceAgent
+        - AI-powered summary via SummariseTransactionsChain
+        - Financial advice via FinancialAdviceChain
+        - RAG queries via FinanceQueryEngine
+        - Security via PromptGuard and OutputValidator
+
+    All LLM calls go through this service — routes never
+    interact with chains or agents directly.
+    """
 
     def __init__(self, db: Session):
+        """Initialize with database session and LLM factory.
+
+        Args:
+            db: SQLAlchemy database session.
+        """
         super().__init__(db)
-        self.repository  = TransactionRepository(db)
-        self.llm_factory = LLMClientFactory()
-        self.llm_client  = self.llm_factory.get_groq_client()
+        self.repository       = TransactionRepository(db)
+        self.llm_factory      = LLMClientFactory()
+        self.llm_client       = self.llm_factory.get_groq_client()
+        self.prompt_guard     = PromptGuard()
+        self.output_validator = OutputValidator()
 
     def classify_transaction(self, description: str) -> dict:
-        """Classify a single transaction description."""
+        """Classify a single transaction description.
+
+        Args:
+            description: Transaction description to classify.
+
+        Returns:
+            Dict with classification result.
+
+        Raises:
+            ValidationError : If input fails security check.
+            InternalError   : If classification fails.
+        """
         self.logger.info(f"Classifying transaction: {description}")
         try:
+            # Security: validate input before sending to LLM
+            safe_description = self.prompt_guard.check_input(description)
+
             chain  = ClassifyTransactionChain(self.llm_client)
-            result = chain.invoke({"transaction": description})
+            result = chain.invoke({"transaction": safe_description})
+
+            # Security: validate output before returning
+            validated = self.output_validator.validate_classification(result)
+
             return {
                 "description"    : description,
-                "classification" : result
+                "classification" : validated.output
             }
+        except ValidationError:
+            raise
         except Exception as e:
             self.logger.error(f"Classification failed: {e}")
             raise InternalError(f"Classification failed: {str(e)}")
 
     def analyse_transactions(self) -> dict:
-        """Run full financial analysis using the FinanceAgent."""
+        """Run full financial analysis using the FinanceAgent.
+
+        Fetches all transactions from DB and runs the complete
+        LangGraph workflow: classify -> analyse -> summarise -> advice.
+
+        Returns:
+            Complete financial analysis report dict.
+
+        Raises:
+            NotFoundError : If no transactions exist.
+            InternalError : If agent execution fails.
+        """
         self.logger.info("Running full financial analysis")
 
         transactions = self.repository.get_all_with_category()
@@ -70,7 +120,18 @@ class AIService(BaseService):
             raise InternalError(f"Financial analysis failed: {str(e)}")
 
     def get_ai_summary(self) -> dict:
-        """Generate AI-powered financial summary."""
+        """Generate AI-powered financial summary using chain directly.
+
+        Lighter alternative to full agent analysis.
+        Uses SummariseTransactionsChain without classification step.
+
+        Returns:
+            Financial summary dict.
+
+        Raises:
+            NotFoundError : If no transactions exist.
+            InternalError : If summary generation fails.
+        """
         self.logger.info("Generating AI summary")
 
         transactions = self.repository.get_all_with_category()
@@ -103,7 +164,20 @@ class AIService(BaseService):
         savings_rate   : float,
         top_category   : str
     ) -> dict:
-        """Generate personalised financial advice."""
+        """Generate personalised financial advice.
+
+        Args:
+            total_income   : Total income amount.
+            total_expenses : Total expenses amount.
+            savings_rate   : Savings rate percentage.
+            top_category   : Largest expense category.
+
+        Returns:
+            Dict with advice string.
+
+        Raises:
+            InternalError: If advice generation fails.
+        """
         self.logger.info("Generating financial advice")
         try:
             chain  = FinancialAdviceChain(self.llm_client)
@@ -117,38 +191,6 @@ class AIService(BaseService):
         except Exception as e:
             self.logger.error(f"Advice generation failed: {e}")
             raise InternalError(f"Advice generation failed: {str(e)}")
-
-    def query_finances(self, question: str) -> dict:
-        """Answer a natural language question about finances using RAG.
-
-        Builds an index from all transactions and queries it.
-
-        Args:
-            question: Natural language question about finances.
-
-        Returns:
-            Dict with answer and source documents.
-
-        Raises:
-            NotFoundError : If no transactions exist.
-            InternalError : If RAG query fails.
-        """
-        self.logger.info(f"RAG query: {question}")
-
-        transactions = self.repository.get_all_with_category()
-        if not transactions:
-            raise NotFoundError("No transactions found for querying")
-
-        try:
-            engine = FinanceQueryEngine()
-            engine.build_index(transactions)
-            result = engine.query(question)
-            self.logger.info("RAG query completed")
-            return result
-        except Exception as e:
-            self.logger.error(f"RAG query failed: {e}")
-            raise InternalError(f"RAG query failed: {str(e)}")
-
 
     def query_finances(self, question: str) -> dict:
         """Answer a natural language question about finances using RAG.
@@ -168,29 +210,36 @@ class AIService(BaseService):
         """
         self.logger.info(f"RAG query: {question}")
 
+        # Security: validate input before sending to LLM
+        safe_question = self.prompt_guard.check_input(question)
+
         try:
             engine = FinanceQueryEngine()
-
-            # Try loading existing persisted index first
             loaded = engine.load_existing_index()
 
             if not loaded:
-                # No persisted index - build from transactions
                 transactions = self.repository.get_all_with_category()
                 if not transactions:
                     raise NotFoundError("No transactions found for querying")
                 engine.build_index(transactions)
 
-            result = engine.query(question)
+            result = engine.query(safe_question)
+
+            # Security: validate output before returning
+            validated = self.output_validator.validate(result["answer"])
+            if validated.is_valid:
+                result["answer"] = validated.output
+
             self.logger.info("RAG query completed")
             return result
 
         except NotFoundError:
             raise
+        except ValidationError:
+            raise
         except Exception as e:
             self.logger.error(f"RAG query failed: {e}")
             raise InternalError(f"RAG query failed: {str(e)}")
-
 
     def rebuild_finance_index(self) -> dict:
         """Rebuild the vector index from all current transactions.
